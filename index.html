@@ -118,6 +118,7 @@ dialog button.sec,.link{margin-top:8px;width:100%;padding:11px;border:1.5px soli
 .dcard h4{margin:0 0 12px;font-size:15px}
 .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:14px 16px}
+.kpi[data-ps]{cursor:pointer}.kpi[data-ps]:active{background:rgba(238,138,31,.14)}
 .kpi small{color:var(--mute);font-size:12.5px;display:block}
 .kpi b{font-size:30px;line-height:1.2;display:block}
 .kpi.w b{color:var(--warn)}.kpi.l b{color:var(--bad)}.kpi.d b{color:var(--ok)}
@@ -142,9 +143,9 @@ dialog button.sec,.link{margin-top:8px;width:100%;padding:11px;border:1.5px soli
   .hb{grid-template-columns:84px 1fr 34px}
 }
 
-.hb[data-dept]{cursor:pointer;border-radius:10px;padding:2px 4px;margin-left:-4px;margin-right:-4px}
-.hb[data-dept]:hover,.hb[data-dept]:active{background:rgba(238,138,31,.14)}
-.hb[data-dept] span:first-child{color:var(--acc2);font-weight:600}
+.hb[data-pk]{cursor:pointer;border-radius:10px;padding:2px 4px;margin-left:-4px;margin-right:-4px}
+.hb[data-pk]:hover,.hb[data-pk]:active{background:rgba(238,138,31,.14)}
+.hb[data-pk] span:first-child{color:var(--acc2);font-weight:600}
 #pdlg{width:min(96vw,860px);max-height:94vh;overflow:auto}
 #pdlg:not([open]){display:none}
 .popt{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 12px}
@@ -205,7 +206,7 @@ dialog button.sec,.link{margin-top:8px;width:100%;padding:11px;border:1.5px soli
 
 <div id="app" hidden>
   <header><h1><svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 28h24M7 28V10l9-6 9 6v18M12 28V16h8v12M12 20h8M3 31h26" stroke-linecap="round" stroke-linejoin="round"/></svg>工程查核</h1><div><span id="who"></span><button id="logout">登出</button></div></header>
-  <nav><button id="t1" class="on">新增查核</button><button id="t2">查核紀錄</button><button id="t3">儀錶板</button></nav>
+  <nav><button id="t1" class="on">新增查核</button><button id="t2">查核紀錄</button><button id="t3">儀表板</button></nav>
 
   <main id="v1"><div class="grid">
     <div class="f"><label>查核日期<i>*</i></label><input type="date" id="date"></div>
@@ -255,7 +256,7 @@ dialog button.sec,.link{margin-top:8px;width:100%;padding:11px;border:1.5px soli
   <button class="sec" id="eClose">關閉</button>
 </div></dialog>
 <dialog id="pdlg"><div class="ed">
-  <h3>缺失單<small>依目前儀錶板篩選條件</small></h3>
+  <h3>缺失單<small>依目前儀表板篩選條件</small></h3>
   <div class="popt">
     <select id="pOnly"><option value="open">僅列未完成</option><option value="all">全部（含已完成）</option></select>
     <label><input type="checkbox" id="pPic" checked>附缺失照片</label>
@@ -1527,13 +1528,15 @@ window.QR={make:function(text){var q=new QRCode(-1,text.length>200?EC.L:EC.M);q.
 </script>
 <script>
 const BUILTIN_API=''/*__API__*/;
+// ★ 把 Apps Script「網頁應用程式」網址（/exec 結尾）貼在下方引號內，QR Code 與連線設定就會一併綁定，不必再手動設定
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbwd5nFtCI-QQl7GZAbvM1bzgw6Yy11mSUNHVnaD8MCE8qOu_OIsSsg9DVQ3iVqfDME/exec';
 const $ = s => document.querySelector(s);
 const MEM={};
 const ls = { get:k=>{try{const v=localStorage.getItem(k);if(v!==null)return v}catch(e){} return MEM[k]||''}, set:(k,v)=>{MEM[k]=v;try{localStorage.setItem(k,v)}catch(e){}}, del:k=>{delete MEM[k];try{localStorage.removeItem(k)}catch(e){}} };
 const today = (d=new Date()) => new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const nowLocal = () => new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16);
 let photos = {p1:'', p2:''}, doneVal = 'N', rows = [];
-const api = () => BUILTIN_API || ls.get('url');
+const api = () => BUILTIN_API || ls.get('url') || DEFAULT_API;
 const API_RE=/^https:\/\/script\.google\.com\/.+\/exec$/;
 
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3200)}
@@ -1716,7 +1719,7 @@ $('#eSave').onclick=async()=>{
 $('#flt').onchange=render; $('#reload').onclick=load;
 
 
-// ---- 儀錶板 ----
+// ---- 儀表板 ----
 const D=s=>String(s||'').slice(0,10);
 const gid=u=>{const m=String(u||'').match(/[?&]id=([\w-]+)|\/d\/([\w-]+)/);return m?(m[1]||m[2]):''};
 const thumb=u=>{const i=gid(u);return i?`https://drive.google.com/thumbnail?id=${i}&sz=w800`:u};
@@ -1748,7 +1751,7 @@ function renderDash(){
   const grp=(key,n)=>{ const m={}; st.forEach(x=>{const k=x.r[key]||'（未填）';const o=m[k]||(m[k]={w:0,l:0,d:0});x.done?o.d++:x.late?o.l++:o.w++;});
     const arr=Object.entries(m).sort((p,q)=>(q[1].w+q[1].l)-(p[1].w+p[1].l)||(q[1].w+q[1].l+q[1].d)-(p[1].w+p[1].l+p[1].d)).slice(0,n);
     const mx=Math.max(...arr.map(([,o])=>o.w+o.l+o.d));
-    return arr.map(([k,o])=>{const s=o.w+o.l+o.d,f=v=>(v/mx*100).toFixed(1)+'%';return `<div class="hb"${key==='責任單位'?` data-dept="${esc(k)}" title="點選列印缺失單"`:''}><span title="${esc(k)}">${esc(k)}</span><div class="tk"><em class="cl" style="width:${f(o.l)}"></em><em class="cw" style="width:${f(o.w)}"></em><em class="cd" style="width:${f(o.d)}"></em></div><span>${s}</span></div>`}).join(''); };
+    return arr.map(([k,o])=>{const s=o.w+o.l+o.d,f=v=>(v/mx*100).toFixed(1)+'%';return `<div class="hb" data-pk="${esc(key)}" data-pv="${esc(k)}" title="點選列印缺失單"><span title="${esc(k)}">${esc(k)}</span><div class="tk"><em class="cl" style="width:${f(o.l)}"></em><em class="cw" style="width:${f(o.w)}"></em><em class="cd" style="width:${f(o.d)}"></em></div><span>${s}</span></div>`}).join(''); };
   const legend='<div class="lg"><span><i class="cl"></i>逾期</span><span><i class="cw"></i>未完成</span><span><i class="cd"></i>已完成</span></div>';
 
   const days=[...Array(14)].map((_,i)=>today(new Date(Date.now()-(13-i)*864e5)));
@@ -1762,41 +1765,49 @@ function renderDash(){
     .map(x=>`<div class="od" data-id="${esc(x.r['編號'])}"><span>${esc(x.r['棟別'])} ${esc(x.r['戶別'])} ${esc(x.r['樓層'])}｜${esc(x.r['責任單位'])}<small>${esc(x.r['查核缺失'])}</small></span><span class="tag l">逾 ${tn-dayNum(x.r['改善預定日期'])} 天</span></div>`).join('');
 
   $('#dash').innerHTML=`<div class="kpis full">
-    <div class="kpi"><small>查核總數</small><b>${total}</b></div>
-    <div class="kpi w"><small>未完成</small><b>${open}</b></div>
-    <div class="kpi l"><small>逾期未改善</small><b>${late}</b></div>
-    <div class="kpi d"><small>已完成</small><b>${done}</b></div></div>
+    <div class="kpi" data-ps="total"><small>查核總數</small><b>${total}</b></div>
+    <div class="kpi w" data-ps="open"><small>未完成</small><b>${open}</b></div>
+    <div class="kpi l" data-ps="late"><small>逾期未改善</small><b>${late}</b></div>
+    <div class="kpi d" data-ps="done"><small>已完成</small><b>${done}</b></div></div>
     <div class="dcard">${donut}</div>
     <div class="dcard"><h4>近 14 天趨勢</h4>${trend}</div>
-    <div class="dcard"><h4>責任單位（點選列印缺失單）</h4>${legend}${grp('責任單位',8)}</div>
-    <div class="dcard"><h4>棟別（件數）</h4>${legend}${grp('棟別',8)}</div>
+    <div class="dcard"><h4>責任單位（點選列印）</h4>${legend}${grp('責任單位',8)}</div>
+    <div class="dcard"><h4>棟別（點選列印）</h4>${legend}${grp('棟別',8)}</div>
+    <div class="dcard"><h4>查核者（點選列印）</h4>${legend}${grp('查核人',8)}</div>
     <div class="dcard"><h4>逾期待辦</h4>${od||'<div class="empty" style="padding:16px 0">沒有逾期項目</div>'}</div>`;
   $('#dash').querySelectorAll('.od').forEach(el=>el.onclick=()=>openEdit(el.dataset.id));
-  $('#dash').querySelectorAll('[data-dept]').forEach(el=>el.onclick=()=>openPrint(el.dataset.dept));
+  $('#dash').querySelectorAll('[data-pk]').forEach(el=>el.onclick=()=>openPrint(el.dataset.pk,el.dataset.pv));
+  $('#dash').querySelectorAll('[data-ps]').forEach(el=>el.onclick=()=>openPrint('status',el.dataset.ps));
 }
 $('#dRange').onchange=renderDash; $('#dBld').onchange=renderDash; $('#dReload').onclick=loadDash;
 function reloadCur(){ $('#v3').hidden?load():loadDash(); }
 
 
 // ---- 缺失單列印 ----
-let dashRows=[], pDept='';
-function sheetHtml(list,dept,pic){
-  const open=list.filter(r=>r['完成否']!=='Y').length, t=new Date();
+let dashRows=[], pKey='', pVal='';
+const S_LABEL={total:'全部缺失',open:'未完成',late:'逾期未改善',done:'已完成'};
+const P_LABEL={'責任單位':'責任單位','棟別':'棟別','查核人':'查核人','status':'篩選條件'};
+function sheetHtml(list,pic){
+  const open=list.filter(r=>r['完成否']!=='Y').length, t=new Date(), byDept=pKey!=='責任單位';
   const ts=`${t.getFullYear()}/${String(t.getMonth()+1).padStart(2,'0')}/${String(t.getDate()).padStart(2,'0')}`;
-  const body=list.map((r,i)=>`<tr><td class="nc">${i+1}</td><td>${esc(r['編號'])}</td><td>${esc(r['棟別'])} ${esc(r['戶別'])} ${esc(r['樓層'])}</td><td>${esc(r['查核缺失'])}</td>${pic?`<td>${r['缺失照片']?`<img src="${esc(thumb(r['缺失照片']))}" referrerpolicy="no-referrer" alt="缺失照片" onerror="if(!this.dataset.f){this.dataset.f=1;this.src='${esc(thumb2(r['缺失照片']))}'}else{this.outerHTML='（照片無法顯示）'}">`:''}</td>`:''}<td>${esc(D(r['查核日期']))}<br>${esc(r['查核人'])}</td><td class="nc">${esc(D(r['改善預定日期']))}</td><td class="nc">${stat(r).txt}</td></tr>`).join('');
-  return `<div class="psheet"><h1>工程缺失改善通知單</h1>
-  <table class="meta"><tr><th>責任單位</th><td>${esc(dept)}</td><th>列印日期</th><td>${ts}</td></tr>
+  const val=pKey==='status'?S_LABEL[pVal]:pVal;
+  const body=list.map((r,i)=>`<tr><td class="nc">${i+1}</td><td>${esc(r['編號'])}</td><td>${esc(r['棟別'])} ${esc(r['戶別'])} ${esc(r['樓層'])}</td>${byDept?`<td>${esc(r['責任單位'])}</td>`:''}<td>${esc(r['查核缺失'])}</td>${pic?`<td>${r['缺失照片']?`<img src="${esc(thumb(r['缺失照片']))}" referrerpolicy="no-referrer" alt="缺失照片" onerror="if(!this.dataset.f){this.dataset.f=1;this.src='${esc(thumb2(r['缺失照片']))}'}else{this.outerHTML='（照片無法顯示）'}">`:''}</td>`:''}<td>${esc(D(r['查核日期']))}<br>${esc(r['查核人'])}</td><td class="nc">${esc(D(r['改善預定日期']))}</td><td class="nc">${stat(r).txt}</td></tr>`).join('');
+  return `<div class="psheet"><h1>${pKey==='責任單位'?'工程缺失改善通知單':'工程缺失清單'}</h1>
+  <table class="meta"><tr><th>${P_LABEL[pKey]}</th><td>${esc(val)}</td><th>列印日期</th><td>${ts}</td></tr>
   <tr><th>缺失件數</th><td>${list.length} 件（未完成 ${open} 件）</td><th>列印人</th><td>${esc(ls.get('name'))}</td></tr></table>
-  <table class="list"><thead><tr><th class="nc">序</th><th>編號</th><th>位置</th><th>缺失內容</th>${pic?'<th>照片</th>':''}<th>查核</th><th>預定改善</th><th>狀態</th></tr></thead><tbody>${body}</tbody></table>
+  <table class="list"><thead><tr><th class="nc">序</th><th>編號</th><th>位置</th>${byDept?'<th>責任單位</th>':''}<th>缺失內容</th>${pic?'<th>照片</th>':''}<th>查核</th><th>預定改善</th><th>狀態</th></tr></thead><tbody>${body}</tbody></table>
   <table class="sign"><tr><td><small>查核人簽章／日期</small></td><td><small>責任單位簽收／日期</small></td><td><small>複查結果／日期</small></td></tr></table></div>`;
 }
 function pList(){ const only=$('#pOnly').value==='open';
-  return dashRows.filter(r=>(r['責任單位']||'（未填）')===pDept&&(!only||r['完成否']!=='Y')).sort((p,q)=>D(p['改善預定日期']).localeCompare(D(q['改善預定日期']))); }
+  return dashRows.filter(r=>{
+    if(pKey==='status'){ const s=stat(r); return pVal==='total'||(pVal==='open'&&!s.done)||(pVal==='late'&&s.late)||(pVal==='done'&&s.done); }
+    return (r[pKey]||'（未填）')===pVal&&(!only||r['完成否']!=='Y');
+  }).sort((p,q)=>D(p['改善預定日期']).localeCompare(D(q['改善預定日期']))); }
 function buildPrint(){
   const list=pList(); $('#pCount').textContent=list.length+' 件'; $('#pPrint').disabled=!list.length;
-  $('#pPreview').innerHTML=list.length?sheetHtml(list,pDept,$('#pPic').checked):'<div class="empty">沒有符合的缺失</div>';
+  $('#pPreview').innerHTML=list.length?sheetHtml(list,$('#pPic').checked):'<div class="empty">沒有符合的缺失</div>';
 }
-function openPrint(dept){ pDept=dept; buildPrint(); $('#pdlg').showModal(); }
+function openPrint(key,val){ pKey=key; pVal=val; $('#pOnly').hidden=key==='status'; buildPrint(); $('#pdlg').showModal(); }
 $('#pOnly').onchange=buildPrint; $('#pPic').onchange=buildPrint; $('#pClose').onclick=()=>$('#pdlg').close();
 $('#pPrint').onclick=()=>{ $('#printRoot').innerHTML=$('#pPreview').innerHTML; setTimeout(()=>window.print(),150); };
 window.addEventListener('afterprint',()=>{ $('#printRoot').innerHTML=''; });
